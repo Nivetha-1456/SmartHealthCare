@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="glass-card">
+    <h2><i class="fas fa-calendar-alt"></i> Appointments Calendar</h2>
+    <p>Manage your telemedicine appointments.</p>
+
+    <!-- Calendar Navigation -->
+    <div
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.5rem;">
+        <button class="btn btn-secondary" id="prevMonth"><i class="fas fa-chevron-left"></i> Previous</button>
+        <h3 id="currentMonthYear">October 2026</h3>
+        <button class="btn btn-secondary" id="nextMonth">Next <i class="fas fa-chevron-right"></i></button>
+    </div>
+
+    <!-- Calendar Grid -->
+    <div class="calendar-grid" id="calendarGrid"></div>
+
+    <!-- Appointment Details Panel -->
+    <div id="appointmentDetails" style="margin-top: 2rem; display: none;">
+        <h4>Appointments on <span id="selectedDate"></span></h4>
+        <div id="appointmentList" class="dashboard-grid" style="grid-template-columns: 1fr;"></div>
+    </div>
+</div>
+
+<!-- Booking Card (only for patients) -->
+{% if role == 'Patient' %}
+<div class="glass-card" style="margin-top: 2rem;">
+    <h3><i class="fas fa-calendar-plus"></i> Book an Appointment</h3>
+    <form id="bookingForm">
+        <div class="dashboard-grid" style="grid-template-columns: repeat(3,1fr); gap:1rem;">
+            <div class="form-group">
+                <label>Select Doctor</label>
+                <select class="form-control" id="doctorSelect" required>
+                    <option value="">-- Choose --</option>
+                    <option value="1">Dr. Smith (Cardiology)</option>
+                    <option value="2">Dr. Jane (General)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Date</label>
+                <input type="date" class="form-control" id="apptDate" required>
+            </div>
+            <div class="form-group">
+                <label>Time</label>
+                <input type="time" class="form-control" id="apptTime" required>
+            </div>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="bookAppointment()"><i class="fas fa-paper-plane"></i>
+            Book Now</button>
+    </form>
+</div>
+{% endif %}
+
+<style>
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+        margin-top: 1rem;
+    }
+
+    .calendar-day {
+        background: var(--bg-input);
+        border-radius: 12px;
+        padding: 0.8rem 0.3rem;
+        text-align: center;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: background 0.2s;
+        border: 1px solid var(--border);
+    }
+
+    .calendar-day:hover:not(.empty) {
+        background: var(--primary);
+        color: white;
+    }
+
+    .calendar-day.today {
+        border: 2px solid var(--primary);
+        font-weight: bold;
+    }
+
+    .calendar-day.has-appointment {
+        background: var(--secondary);
+        color: white;
+        font-weight: 600;
+    }
+
+    .calendar-day.empty {
+        background: transparent;
+        border: none;
+        cursor: default;
+    }
+
+    .calendar-day.header {
+        background: transparent;
+        border: none;
+        cursor: default;
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+
+    @media (max-width: 500px) {
+        .calendar-day {
+            padding: 0.5rem 0.1rem;
+            font-size: 0.8rem;
+        }
+    }
+</style>
+
+<script>
+    // Appointments data passed from Flask
+    const appointments = {{ appointments | tojson }};
+    const userRole = "{{ role }}";
+
+    let currentDate = new Date();
+
+    function renderCalendar() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const firstDay = new Date(year, month, 1).getDay(); // 0 = Sunday
+        const lastDate = new Date(year, month + 1, 0).getDate();
+
+        const monthNames = ["January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"];
+        document.getElementById('currentMonthYear').innerText = `${monthNames[month]} ${year}`;
+
+        let gridHtml = '';
+        // Weekday headers
+        const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        weekdays.forEach(day => {
+            gridHtml += `<div class="calendar-day header">${day}</div>`;
+        });
+
+        // Empty cells before first day
+        for (let i = 0; i < firstDay; i++) {
+            gridHtml += '<div class="calendar-day empty"></div>';
+        }
+
+        // Days of month
+        for (let d = 1; d <= lastDate; d++) {
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const hasAppt = appointments.some(a => a.date.startsWith(dateStr));
+            const isToday = (new Date().getFullYear() === year && new Date().getMonth() === month && new Date().getDate() === d);
+            gridHtml += `<div class="calendar-day ${hasAppt ? 'has-appointment' : ''} ${isToday ? 'today' : ''}" data-date="${dateStr}" onclick="showAppointments('${dateStr}')">${d}</div>`;
+        }
+
+        document.getElementById('calendarGrid').innerHTML = gridHtml;
+    }
+
+    function showAppointments(date) {
+        const dayAppointments = appointments.filter(a => a.date.startsWith(date));
+        const detailsDiv = document.getElementById('appointmentDetails');
+        const listDiv = document.getElementById('appointmentList');
+        document.getElementById('selectedDate').innerText = date;
+
+        if (dayAppointments.length === 0) {
+            listDiv.innerHTML = '<p>No appointments on this day.</p>';
+        } else {
+            listDiv.innerHTML = dayAppointments.map(a => {
+                const otherParty = userRole === 'Patient' ? a.doctor_name : a.patient_name;
+                return `
+                    <div class="glass-card" style="padding:1rem;">
+                        <p><strong>${a.date}</strong> - Status: <span style="color:var(--warning);">${a.status}</span></p>
+                        <p>${userRole === 'Patient' ? 'Doctor' : 'Patient'}: ${otherParty || 'N/A'}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+        detailsDiv.style.display = 'block';
+    }
+
+    function bookAppointment() {
+        const doctor = document.getElementById('doctorSelect').value;
+        const date = document.getElementById('apptDate').value;
+        const time = document.getElementById('apptTime').value;
+        if (!doctor || !date || !time) {
+            alert('Please fill all fields');
+            return;
+        }
+        // Mock booking – replace with actual fetch to server if needed
+        alert(`Appointment requested with doctor ${doctor} on ${date} at ${time}`);
+        // Optionally refresh calendar after booking (would require server update)
+    }
+
+    document.getElementById('prevMonth').addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        renderCalendar();
+        document.getElementById('appointmentDetails').style.display = 'none';
+    });
+
+    document.getElementById('nextMonth').addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        renderCalendar();
+        document.getElementById('appointmentDetails').style.display = 'none';
+    });
+
+    // Initial render
+    renderCalendar();
+</script>
+{% endblock %}

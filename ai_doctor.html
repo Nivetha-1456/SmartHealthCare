@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="glass-card">
+    <h2><i class="fas fa-robot"></i> AI Virtual Doctor</h2>
+    <div class="chat-window" id="chatWindow">
+        <div class="message message-ai">Hello, {{ session.username }}. How can I help?<div class="message-time">{{
+                now().strftime('%H:%M') }}</div>
+        </div>
+    </div>
+    <div style="display:flex; gap:0.5rem;">
+        <input type="text" id="chatInput" class="form-control" placeholder="Describe symptoms...">
+        <button class="btn btn-secondary" id="voiceBtn"><i class="fas fa-microphone"></i></button>
+        <button class="btn btn-primary" onclick="sendChatMessage()"><i class="fas fa-paper-plane"></i> Send</button>
+    </div>
+</div>
+<script>
+    document.getElementById('voiceBtn')?.addEventListener('click', function () {
+        alert('Voice input simulated. Type instead.');
+    });
+</script>
+{% endblock %}

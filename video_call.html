@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card" style="text-align: center; padding: 2rem;">
+    <h2><i class="fas fa-video"></i> Telemedicine Video Consultation</h2>
+    <p style="color: var(--text-muted); margin-bottom: 2rem;">Connected with Dr. Smith</p>
+
+    <!-- Video Grid -->
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+        <!-- Remote video (main) -->
+        <div class="video-container" style="background: #1a1a2e;">
+            <video id="remoteVideo" autoplay muted
+                style="width: 100%; height: 100%; object-fit: cover; display: none;"></video>
+            <div class="video-placeholder" id="remotePlaceholder">
+                <i class="fas fa-user-md" style="font-size: 4rem; opacity: 0.5;"></i>
+                <p>Dr. Smith</p>
+                <span class="connection-status" style="color: var(--secondary);"><i class="fas fa-circle"></i>
+                    Connected</span>
+            </div>
+        </div>
+        <!-- Local video (self) -->
+        <div class="video-container" style="background: #0f0f1f;">
+            <video id="localVideo" autoplay muted
+                style="width: 100%; height: 100%; object-fit: cover; display: none;"></video>
+            <div class="video-placeholder" id="localPlaceholder">
+                <i class="fas fa-user" style="font-size: 3rem; opacity: 0.5;"></i>
+                <p>You</p>
+                <span class="connection-status" style="color: var(--warning);"><i class="fas fa-circle"></i>
+                    Connecting...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call Controls -->
+    <div class="video-controls">
+        <button class="video-control-btn" id="muteBtn" onclick="toggleMute()">
+            <i class="fas fa-microphone"></i>
+        </button>
+        <button class="video-control-btn" id="cameraBtn" onclick="toggleCamera()">
+            <i class="fas fa-video"></i>
+        </button>
+        <button class="video-control-btn danger" onclick="endCall()">
+            <i class="fas fa-phone-slash"></i>
+        </button>
+        <button class="video-control-btn" onclick="toggleFullScreen()">
+            <i class="fas fa-expand"></i>
+        </button>
+    </div>
+
+    <!-- Call Timer -->
+    <div style="margin-top: 1.5rem; font-size: 1.2rem; color: var(--text-muted;">
+        <i class="fas fa-clock"></i> <span id="callTimer">00:00</span>
+    </div>
+</div>
+
+<script>
+    let localStream = null;
+    let isMuted = false;
+    let isCameraOn = false;
+    let timerInterval = null;
+    let seconds = 0;
+
+    // Simulate connecting local video after 2 seconds
+    setTimeout(() => {
+        document.getElementById('localPlaceholder').style.display = 'none';
+        document.getElementById('localVideo').style.display = 'block';
+        document.querySelector('#localPlaceholder + .connection-status').innerHTML = '<i class="fas fa-circle"></i> Connected';
+        isCameraOn = true;
+        startTimer();
+    }, 2000);
+
+    function startTimer() {
+        timerInterval = setInterval(() => {
+            seconds++;
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            document.getElementById('callTimer').innerText =
+                `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }, 1000);
+    }
+
+    function toggleMute() {
+        isMuted = !isMuted;
+        const btn = document.getElementById('muteBtn');
+        btn.innerHTML = isMuted ? '<i class="fas fa-microphone-slash"></i>' : '<i class="fas fa-microphone"></i>';
+        // In a real app, you'd mute the local stream
+    }
+
+    function toggleCamera() {
+        isCameraOn = !isCameraOn;
+        const btn = document.getElementById('cameraBtn');
+        btn.innerHTML = isCameraOn ? '<i class="fas fa-video"></i>' : '<i class="fas fa-video-slash"></i>';
+        const localPlaceholder = document.getElementById('localPlaceholder');
+        const localVideo = document.getElementById('localVideo');
+        if (isCameraOn) {
+            localPlaceholder.style.display = 'none';
+            localVideo.style.display = 'block';
+        } else {
+            localPlaceholder.style.display = 'flex';
+            localVideo.style.display = 'none';
+        }
+    }
+
+    function endCall() {
+        if (timerInterval) clearInterval(timerInterval);
+        // Simulate ending call
+        alert('Call ended.');
+        window.location.href = "{{ url_for('dashboard_patient') }}";
+    }
+
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+    }
+</script>
+{% endblock %}

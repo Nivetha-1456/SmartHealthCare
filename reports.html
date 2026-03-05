@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="glass-card">
+    <h2><i class="fas fa-file-pdf"></i> Health Reports & Analytics</h2>
+    <p>Generate downloadable analytics and PDF reports of your health trends.</p>
+
+    <div class="dashboard-grid">
+        <div>
+            <h3>📥 Downloadable Reports</h3>
+            <ul style="list-style: none; padding: 0;">
+                <li style="margin: 1rem 0; display: flex; align-items: center; justify-content: space-between;">
+                    Weekly Overall Report
+                    <button class="btn btn-secondary" onclick="downloadReport('weekly')"><i class="fas fa-download"></i>
+                        Download</button>
+                </li>
+                <li style="margin: 1rem 0; display: flex; align-items: center; justify-content: space-between;">
+                    Monthly Risk Assessment
+                    <button class="btn btn-secondary" onclick="downloadReport('monthly')"><i
+                            class="fas fa-download"></i> Download</button>
+                </li>
+                <li style="margin: 1rem 0; display: flex; align-items: center; justify-content: space-between;">
+                    Telemedicine Summary
+                    <button class="btn btn-secondary" onclick="downloadReport('telemed')"><i
+                            class="fas fa-download"></i> Download</button>
+                </li>
+            </ul>
+        </div>
+
+        <div>
+            <h3>📈 Health Analytics</h3>
+            <canvas id="healthTrendChart" style="max-height: 300px;"></canvas>
+            <div style="display: flex; justify-content: space-between; margin-top: 1rem;">
+                <span><i class="fas fa-heart" style="color:var(--danger);"></i> Avg HR: 72 bpm</span>
+                <span><i class="fas fa-lungs" style="color:var(--primary);"></i> Avg SpO2: 97%</span>
+                <span><i class="fas fa-shoe-prints" style="color:var(--secondary);"></i> Avg Steps: 6,200</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let chart;
+    document.addEventListener('DOMContentLoaded', function () {
+        const ctx = document.getElementById('healthTrendChart').getContext('2d');
+        chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Health Score Trend',
+                    data: [65, 70, 80, 81, 85, 90],
+                    fill: false,
+                    borderColor: '#3b82f6',
+                    tension: 0.1,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#3b82f6',
+                    pointRadius: 5,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: getComputedStyle(document.body).getPropertyValue('--text-primary') } },
+                    tooltip: { enabled: true, mode: 'index' }
+                },
+                scales: {
+                    x: { ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-secondary') } },
+                    y: { ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-secondary') } }
+                }
+            }
+        });
+    });
+
+    function downloadReport(type) {
+        showToast(`Downloading ${type} report... (Demo)`, 'info');
+    }
+</script>
+{% endblock %}

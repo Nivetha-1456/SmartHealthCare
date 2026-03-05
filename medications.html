@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <h2><i class="fas fa-pills"></i> Medications</h2>
+    <p>Add and manage your medications.</p>
+
+    <form id="medForm" onsubmit="addMedication(event)">
+        <div class="dashboard-grid" style="grid-template-columns:repeat(4,1fr);">
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" id="medName" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Dosage</label>
+                <input type="text" id="medDosage" class="form-control" placeholder="e.g., 10mg" required>
+            </div>
+            <div class="form-group">
+                <label>Time</label>
+                <input type="time" id="medTime" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Frequency</label>
+                <select id="medFrequency" class="form-control">
+                    <option>Daily</option>
+                    <option>Twice daily</option>
+                    <option>Weekly</option>
+                </select>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add Medication</button>
+    </form>
+
+    <h3 style="margin-top:2rem;">Your Medications</h3>
+    <div id="medicationsList" class="table-responsive"></div>
+</div>
+
+<script>
+    async function loadMedications() {
+        const res = await fetch('/api/medications');
+        const meds = await res.json();
+        const list = document.getElementById('medicationsList');
+        if (meds.length === 0) {
+            list.innerHTML = '<p>No medications added.</p>';
+        } else {
+            list.innerHTML = `
+                <table>
+                    <thead><tr><th>Name</th><th>Dosage</th><th>Time</th><th>Frequency</th><th>Action</th></tr></thead>
+                    <tbody>
+                        ${meds.map(m => `
+                            <tr>
+                                <td>${m.name}</td>
+                                <td>${m.dosage}</td>
+                                <td>${m.time}</td>
+                                <td>${m.frequency}</td>
+                                <td><button class="btn btn-danger btn-sm" onclick="deleteMed(${m.id})">Delete</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+    }
+
+    async function addMedication(event) {
+        event.preventDefault();
+        const name = document.getElementById('medName').value;
+        const dosage = document.getElementById('medDosage').value;
+        const time = document.getElementById('medTime').value;
+        const freq = document.getElementById('medFrequency').value;
+        if (!name || !dosage || !time) return;
+        await fetch('/api/medications', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, dosage, time, frequency: freq })
+        });
+        loadMedications();
+        showToast('Medication added', 'success');
+    }
+
+    async function deleteMed(id) {
+        if (confirm('Delete this medication?')) {
+            await fetch(`/api/medications/${id}`, { method: 'DELETE' });
+            loadMedications();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadMedications);
+</script>
+{% endblock %}

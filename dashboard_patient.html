@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="dashboard-grid">
+    <!-- Health Score Card -->
+    <div class="card">
+        <h3><i class="fas fa-smile"></i> Welcome, {{ session.username }}</h3>
+        <p class="text-muted">Your Health Overview</p>
+        <div class="gauge-container" id="healthScoreGauge" data-score="{{ latest.health_score if latest else 0 }}">
+            <div class="gauge-inner">{{ latest.health_score if latest else 'N/A' }}</div>
+        </div>
+        <p style="text-align:center; font-weight:600;">
+            Risk:
+            {% if latest %}
+            <span
+                style="color: {% if latest.risk_level=='Low' %}var(--secondary){% elif latest.risk_level=='Medium' %}var(--warning){% else %}var(--danger){% endif %};">
+                {{ latest.risk_level }}
+            </span>
+            {% else %}N/A{% endif %}
+        </p>
+        <div style="display:flex; justify-content:space-around; margin-top:1rem;">
+            <span><i class="fas fa-heart" style="color:var(--danger);"></i> {{ latest.heart_rate if latest else '--'
+                }}</span>
+            <span><i class="fas fa-lungs" style="color:var(--primary);"></i> {{ latest.spo2 if latest else '--'
+                }}%</span>
+            <span><i class="fas fa-shoe-prints" style="color:var(--secondary);"></i> {{ latest.steps if latest else '--'
+                }}</span>
+        </div>
+    </div>
+
+    <!-- AI Diagnosis Card -->
+    <div class="card">
+        <h3><i class="fas fa-microchip"></i> AI Diagnosis</h3>
+        {% if latest %}
+        <div class="alert alert-{% if latest.risk_level=='Low' %}success{% else %}error{% endif %}">
+            <strong>{{ latest.ai_diagnosis }}</strong>
+        </div>
+        <ul style="list-style:none; padding:0;">
+            <li><i class="fas fa-thermometer-half"></i> Temp: {{ latest.temperature or '--' }} °F</li>
+            <li><i class="fas fa-heartbeat"></i> HR: {{ latest.heart_rate or '--' }} bpm</li>
+            <li><i class="fas fa-lungs"></i> SpO₂: {{ latest.spo2 or '--' }}%</li>
+            <li><i class="fas fa-tint"></i> Blood Sugar: {{ latest.blood_sugar or '--' }} mg/dL</li>
+        </ul>
+        {% else %}
+        <p>No records. <a href="{{ url_for('health') }}">Log now</a>.</p>
+        {% endif %}
+    </div>
+
+    <!-- Quick Actions Card -->
+    <div class="card">
+        <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+        <div style="display:flex; flex-direction:column; gap:0.8rem;">
+            <button class="btn btn-secondary" onclick="syncWatch()"><i class="fas fa-sync-alt"></i> Sync Watch</button>
+            <a href="{{ url_for('health') }}" class="btn btn-primary"><i class="fas fa-pen"></i> Log Health</a>
+            <a href="{{ url_for('ai_doctor') }}" class="btn btn-secondary"><i class="fas fa-robot"></i> AI Doctor</a>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Records -->
+<div class="card" style="margin-top:2rem;">
+    <h3><i class="fas fa-history"></i> Recent Health Records</h3>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Temp</th>
+                    <th>HR</th>
+                    <th>SpO₂</th>
+                    <th>Score</th>
+                    <th>AI</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in records %}
+                <tr>
+                    <td>{{ r.date[:10] }}</td> <!--  FIXED: use string slicing instead of .strftime -->
+                    <td>{{ r.temperature }}</td>
+                    <td>{{ r.heart_rate }}</td>
+                    <td>{{ r.spo2 }}</td>
+                    <td>{{ r.health_score }}</td>
+                    <td>{{ r.ai_diagnosis }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const score = parseInt(document.getElementById('healthScoreGauge').dataset.score);
+    if (score > 0) {
+        let color = score > 75 ? 'var(--secondary)' : (score > 50 ? 'var(--warning)' : 'var(--danger)');
+        document.getElementById('healthScoreGauge').style.background = `conic-gradient(${color} ${score}%, #2d3748 0)`;
+    }
+</script>
+{% endblock %}

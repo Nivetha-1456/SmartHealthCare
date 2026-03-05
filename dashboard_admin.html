@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<h2><i class="fas fa-crown"></i> Admin Dashboard</h2>
+<div class="dashboard-grid">
+    <div class="glass-card">
+        <h3>📊 System Statistics</h3>
+        <p><i class="fas fa-users"></i> Total Registered Users: {{ users|length }}</p>
+        <p><i class="fas fa-database"></i> Total Health Records: {{ record_count }}</p>
+        <p><i class="fas fa-calendar-check"></i> Appointments Today: 12</p>
+    </div>
+
+    <div class="glass-card">
+        <h3>👤 User Management</h3>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td>{{ u.id }}</td>
+                        <td>{{ u.username }}</td>
+                        <td>{{ u.role }}</td>
+                        <td>
+                            <button class="btn btn-danger" style="padding: 5px 12px;" onclick="banUser({{ u.id }})"><i
+                                    class="fas fa-ban"></i> Ban</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function banUser(id) {
+        showToast(`User ${id} banned (demo)`, 'error');
+    }
+</script>
+{% endblock %}
